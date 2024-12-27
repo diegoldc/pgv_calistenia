@@ -17,7 +17,8 @@ class MyApp extends StatelessWidget {
         title: 'Namer App',
         theme: ThemeData(
           useMaterial3: true,
-          colorScheme: ColorScheme.fromSeed(seedColor: const Color.fromARGB(253, 94, 0, 156)),
+          colorScheme: ColorScheme.fromSeed(
+              seedColor: const Color.fromARGB(253, 94, 0, 156)),
         ),
         home: MyHomePage(),
       ),
@@ -27,7 +28,7 @@ class MyApp extends StatelessWidget {
 
 class MyAppState extends ChangeNotifier {
   var current = WordPair.random();
-  
+
   void getNext() {
     current = WordPair.random();
     notifyListeners();
@@ -36,53 +37,105 @@ class MyAppState extends ChangeNotifier {
   var favorites = <WordPair>[];
 
   void toggleFavorite() {
-    if (favorites.contains(current)){
+    if (favorites.contains(current)) {
       favorites.remove(current);
     } else {
       favorites.add(current);
     }
     notifyListeners();
   }
-}
 
-// ...
-
-class MyHomePage extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Row(
-        children: [
-          SafeArea(
-            child: NavigationRail(
-              extended: false,
-              destinations: [
-                NavigationRailDestination(
-                  icon: Icon(Icons.home),
-                  label: Text('Home'),
-                ),
-                NavigationRailDestination(
-                  icon: Icon(Icons.favorite),
-                  label: Text('Favorites'),
-                ),
-              ],
-              selectedIndex: 0,
-              onDestinationSelected: (value) {
-                print('selected: $value');
-              },
-            ),
-          ),
-          Expanded(
-            child: Container(
-              color: Theme.of(context).colorScheme.primaryContainer,
-              child: GeneratorPage(),
-            ),
-          ),
-        ],
-      ),
-    );
+  void deleteFavorite(WordPair pair) {
+    favorites.remove(pair);
+    notifyListeners();
   }
 }
+
+class MyHomePage extends StatefulWidget {
+  @override
+  State<MyHomePage> createState() => _MyHomePageState();
+}
+
+class _MyHomePageState extends State<MyHomePage> {
+  var selectedIndex = 0;
+  @override
+  Widget build(BuildContext context) {
+    Widget page;
+    switch (selectedIndex) {
+      case 0:
+        page = GeneratorPage();
+        break;
+      case 1:
+        page = FavoritesPage();
+        break;
+      default:
+        throw UnimplementedError('no widget for $selectedIndex');
+    }
+
+    return LayoutBuilder(builder: (context, constraints) {
+      return Scaffold(
+        body: Row(
+          children: [
+            SafeArea(
+              child: NavigationRail(
+                extended: constraints.maxWidth >= 600,
+                destinations: [
+                  NavigationRailDestination(
+                    icon: Icon(Icons.home),
+                    label: Text('Home'),
+                  ),
+                  NavigationRailDestination(
+                    icon: Icon(Icons.favorite),
+                    label: Text('Favorites'),
+                  ),
+                ],
+                selectedIndex: selectedIndex,
+                onDestinationSelected: (value) {
+                  setState(() {
+                    selectedIndex = value;
+                  });
+                },
+              ),
+            ),
+            Expanded(
+              child: Container(
+                color: Theme.of(context).colorScheme.primaryContainer,
+                child: page,
+              ),
+            ),
+          ],
+        ),
+      );
+    });
+  }
+}
+
+class FavoritesPage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    var appState = context.watch<MyAppState>();
+    var favs = appState.favorites;
+    return ListView(children: [
+      Padding(
+          padding: EdgeInsets.all(16),
+          child: Text('You have ${favs.length} favorites:')),
+      for (var fav in favs)
+        ListTile(
+          leading: GestureDetector(
+            onTap: () {
+            
+              appState.deleteFavorite(fav);
+            },
+            child: Icon(Icons.sports_motorsports),
+          ),
+          title: Text(fav.asLowerCase),
+        )
+    ]);
+  }
+}
+
+// List<String> list = appState.favorites;
+// List<Widget> widgets = list.map((name) => new Text(name)).toList();
 
 class GeneratorPage extends StatelessWidget {
   @override
@@ -142,19 +195,19 @@ class BigCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final style = theme.textTheme.displayMedium!.copyWith(
-      color: theme.colorScheme.onPrimary, 
+      color: theme.colorScheme.onPrimary,
     );
 
     return Card(
       color: theme.colorScheme.primary,
       elevation: 10,
-
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Text(
           pair.asPascalCase,
           style: style,
-          semanticsLabel: "${pair.first} ${pair.second}",),
+          semanticsLabel: "${pair.first} ${pair.second}",
+        ),
       ),
     );
   }
